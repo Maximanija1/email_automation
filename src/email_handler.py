@@ -1,3 +1,4 @@
+import os
 # for sending emails
 import smtplib
 # for reading emails
@@ -5,7 +6,6 @@ import imaplib
 # for parsing email content (extracting text, attachments, etc.)
 import email
 # Load environment variables
-import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -34,10 +34,64 @@ def connect_to_email():
         return None
 
 
-def search_for_emails():
+def close_gmail_connection(mail_connection):
+    try:
+        if mail_connection:
+            # Clode the selected folde (INBOX)
+            mail_connection.close()
+            # Logout fomr the server
+            mail_connection.logout()
+            print("Connection closed successfully.")
+    except Exception as e:
+        print(f"Failed to close connection: {e}")
 
-    # This function should search for "Mediafill" emails
-    pass
+
+def is_connected(mail_connection):
+    try:
+        # Check if the connection is still open
+        if mail_connection:
+            # "No operation" command to check connection status
+            status = mail_connection.noop()
+            return status[0] == 'OK'
+        return False
+    except:
+        return False
+
+
+def search_for_emails(mail_connection, keyword):
+    try:
+        # Search for emails containing keyword in subject OR body
+        search_criteria = f'TEXT "{keyword}"'
+
+        print(f"Searching for email with keyword: {keyword}")
+
+        # Execute the search
+        result, message_ids = mail_connection.search(None, search_criteria)
+
+        #Check if search was successful
+        if result == 'OK':
+            # message_ids is a list of email IDs as bytes
+            email_ids = message_ids[0].split()
+            print(f"Found {len(email_ids)} email containing {keyword}")
+            return email_ids
+        else:
+            print("Search failed")
+            return []
+    
+    except Exception as e:
+        print(f"Error during search: {e}")
+        return []
+
 
 if __name__ == "__main__":
     connection = connect_to_email()
+    if connection:
+        print(f"Connection active: {is_connected(connection)}")
+        
+        # Search for Mediafill emails
+        keyword = "Mediafill"
+        email_ids = search_for_emails(connection, keyword)
+
+        print(f"Email IDs found: {email_ids}")
+
+        close_gmail_connection(connection)
