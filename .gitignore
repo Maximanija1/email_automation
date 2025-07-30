@@ -16,7 +16,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-#Project SPecific
+# Project Specific
 logs/*.log
 downloads/*.pdf
 *.exe

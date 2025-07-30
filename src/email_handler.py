@@ -8,6 +8,9 @@ import email
 # Load environment variables
 from dotenv import load_dotenv
 
+from datetime import datetime
+
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -141,6 +144,58 @@ def has_pdf_attachment (mail_connection, email_id):
         return False
 
 
+def download_pdf_attachment(mail_connection, email_id, download_folder="downloads"):
+
+    downloaded_files = []
+
+    try:
+        # Fetch the full email message using its ID
+        result, email_data = mail_connection.fetch(email_id, '(RFC822)')
+        if result != 'OK':
+            print(f"Error fetching email ID {email_id.decode()}")
+            return []
+        
+        #Parse the raw email data into an email message object
+        raw_email = email_data[0][1]
+        email_message = email.message_from_bytes(raw_email)
+
+        print(f"Scanning email ID {email_id.decode()} for PDF attachments...")
+
+        # Walk through all pars of the email
+        for part in email_message.walk():
+            # Check if the part is an attachment   
+            if part.get_content_disposition() == 'attachment':
+                filename = part.get_filename()
+                if filename and filename.lower().endswith('.pdf'):
+                    # Get the current time as a string
+                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    
+                    # Split the filename from its extension
+                    name, ext = os.path.splitext(filename)
+
+                    # Create the new, unique filename
+                    unique_filename = f"{name}_{timestamp}{ext}"
+
+                    # Get the actual file content and decode it
+                    payload = part.get_payload(decode=True)
+
+                    # Create the full path to save the file 
+                    file_path = os.path.join(download_folder, unique_filename)
+
+                    # Save the attachment to the specified folder
+                    with open(file_path, 'wb') as f:
+                        f.write(payload)
+
+                    downloaded_files.append(file_path)
+                    print(f"Successfully downloaded: {file_path}")
+                
+        return downloaded_files
+    
+    except Exception as e:
+        print(f"An error occurred while downloading attachments: {e}")
+        return[]
+
+
 if __name__ == "__main__":
     connection = connect_to_email()
     if connection:
@@ -152,14 +207,18 @@ if __name__ == "__main__":
 
         print(f"Email IDs found: {email_ids}")
 
+        download_folder = "downloads" # This is the path to your folder 
 
-        # Check each email for PDF attachments
+        # Download the PDF attachments
         if email_ids:
             for email_id in email_ids:
-                print(f"\n--- Checking Email ID: {email_id.decode()} ---")
-                has_pdf = has_pdf_attachment(connection, email_id)
-                print(f"Has PDF attachment: {has_pdf}")
+                # Check if email has a PDF
+                if has_pdf_attachment(connection, email_id):
+                    # If it does, download it
+                    download_pdf_attachment(connection, email_id, download_folder)
+                else:
+                    print(f"No PDF attachments found in email {email_id.decode()}")
         else:
-            print("No emails foun to check for attachments")
+            print("No emails found to process")
 
         close_gmail_connection(connection)
