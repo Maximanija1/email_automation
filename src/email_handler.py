@@ -10,16 +10,10 @@ from dotenv import load_dotenv
 
 from datetime import datetime
 
-from typing import Optional
-
-
 # Load environment variables from .env file
 load_dotenv()
 
-email_address = os.getenv('GMAIL_EMAIL')
-app_password = os.getenv('GMAIL_APP_PASSWORD')
-
-def connect_to_email() -> Optional[imaplib.IMAP4_SSL]:
+def connect_to_email():
     try:
         # Connect to Gmail's IMAP server
         GMAIL_IMAP_SERVER = 'imap.gmail.com'
