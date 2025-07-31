@@ -7,8 +7,11 @@ import imaplib
 import email
 # Load environment variables
 from dotenv import load_dotenv
-
 from datetime import datetime
+from logger_setup import setup_logger
+
+# Create logger at module level
+logger = setup_logger()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,7 +29,7 @@ def connect_to_email():
         # Select the inbox folder
         mail.select('INBOX')
 
-        print("Successfully connected to Gmail Inbox")   
+        logger.info("Successfully connected to Gmail Inbox")   
 
         # Return the connection object
         return mail
@@ -39,9 +42,9 @@ def connect_to_email():
 def close_gmail_connection(mail_connection):
     try:
         if mail_connection:
-            # Clode the selected folde (INBOX)
+            # Close the selected folder (INBOX)
             mail_connection.close()
-            # Logout fomr the server
+            # Logout from the server
             mail_connection.logout()
             print("Connection closed successfully.")
     except Exception as e:
@@ -91,13 +94,13 @@ def search_for_emails_case_insensitive(mail_connection, keyword):
             if result == 'OK':
                 # message_ids is a list of email IDs as bytes
                 email_ids = message_ids[0].split()
-                print(f"Found {len(email_ids)} emails with {variation}")
+                logger.info(f"Found {len(email_ids)} emails with {variation}")
                 all_email_ids.extend(email_ids)
             else:
                 print(f"No emails foun with {variations}")
         
         except Exception as e:
-            print(f"Error searching for {variations}: {e}")
+            logger.error(f"Error searching for {variations}: {e}")
 
     unique_email_ids = list(set(all_email_ids))
 
@@ -167,7 +170,7 @@ def download_pdf_attachment(mail_connection, email_id, download_folder="download
                 filename = part.get_filename()
                 if filename and filename.lower().endswith('.pdf'):
                     # Get the current time as a string
-                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
                     
                     # Split the filename from its extension
                     name, ext = os.path.splitext(filename)
